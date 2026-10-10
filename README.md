@@ -1,19 +1,27 @@
-# MetalForm CAD Web v1.0
-Static web app: open `index.html` locally for most features, or deploy to GitHub Pages for PWA offline caching. No npm or build required.
+# MetalForm CAD Web v1.1
 
-## GitHub Pages on phone
-Create a new PUBLIC GitHub repository `MetalFormCAD-Web`. Upload `index.html`, `app.js`, `sw.js`, `manifest.webmanifest` at the repository ROOT (not a nested folder). Settings → Pages → Deploy from branch → main → /(root) → Save. Site URL: https://YOUR_USERNAME.github.io/MetalFormCAD-Web/ . Private repo Pages availability depends on account plan.
+Static phone-friendly web app. Upload `index.html`, `app.js`, `mesh-tools.js`, `sw.js`, and `manifest.webmanifest` to the **root** of your GitHub Pages repository.
 
-## Features
-- Parametric rectangle, cylinder wrap, truncated cone annular sector, single bend strip (K-factor bend allowance).
-- 2D preview, DXF R2000-style LWPOLYLINE export in mm, SVG export.
-- Simple rectangle-envelope nesting, 90-degree rotation, multiple sheets, DXF per sheet translated into a common drawing.
-- Wireframe STL (binary or ASCII) and OBJ preview with touch rotation. Import is view-only.
+## Added in v1.1
+- Experimental OBJ/STL triangle-mesh unfolding into nonoverlapping islands using a greedy breadth-first edge-adjacency development.
+- Seam editing: check **Tap 3D edges to mark seams**, open 3D view, tap edges; orange indicates manually marked cut seams.
+- Experimental mesh DXF with per-island exposed boundary segments on `CUT` layer.
+- Mesh scale input (imported units to mm).
 
 ## Limitations
-- Cone sector is approximated by segmented polylines, so set adequate segments.
-- Cylinder and cone input diameters are interpreted as developed surface diameters, not automatically corrected for material neutral axis.
-- Bend straight legs are measured to tangent points; not outside flange dimensions.
-- Nesting uses bounding boxes, not irregular polygon nesting. Nesting preview shows first sheet; DXF contains all sheets.
-- STL/OBJ arbitrary mesh unfolding, manual seam selection, polygon nesting, and CNC-ready manufacturing validation are NOT included.
-- Test dimensional accuracy in CAD/CAM before cutting steel. No kerf compensation.
+- Not a full Pepakura implementation. The mesh unfolding can create many disconnected islands; it does not sew or join seams, account for sheet thickness, or guarantee manufacturability. Triangle overlap checks are approximate.
+- STL vertices are welded by 1e-5 coordinate rounding; open meshes, non-manifold edges, and inconsistent normals may not unfold as intended.
+- Large imported meshes are limited to 1000 triangles for unfolding (3D viewing accepts larger files).
+- Existing automatic nesting remains rectangular-envelope nesting for parametric parts, not true irregular polygon nesting or mixed-parts nesting. Mesh islands are **not** automatically nested.
+- Bend pattern flange lengths are tangent straight lengths, not outside dimensions.
+- Cylinder/cone developments use outside diameters and are not compensated for neutral-axis position.
+- All geometry and exported files require independent dimensional verification before CNC fabrication.
+
+## Deployment
+1. Extract ZIP on Android.
+2. Upload all five root files to GitHub repo (not the enclosing folder).
+3. Wait for GitHub Pages to deploy; refresh twice or close/reopen site if service worker serves old cache.
+4. Chrome → Add to Home screen (if available).
+
+## Testing
+JavaScript source passes Node syntax checks. No Android browser or real-machine CNC test was performed.
