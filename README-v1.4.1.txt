@@ -1,0 +1,1 @@
+v1.4.1 STL import troubleshooting patch. Adds immediate file selection and reading status, validation, error reporting, file input reset, and view switching. Not yet browser-tested. Upload all root files to GitHub Pages and hard-refresh.

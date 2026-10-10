@@ -27,5 +27,28 @@ function svg(){if(!current)return;let b=current.bounds,pad=10,w=b.maxx-b.minx+2*
 function download(data,name,type){let u=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
 function parseOBJ(s){let v=[],faces=[];for(let l of s.split(/\r?\n/)){let t=l.trim().split(/\s+/);if(t[0]==='v'&&t.length>=4)v.push(t.slice(1,4).map(Number));if(t[0]==='f'){let ix=t.slice(1).map(a=>Number(a.split('/')[0])).map(n=>n<0?v.length+n:n-1);for(let j=1;j<ix.length-1;j++)faces.push([ix[0],ix[j],ix[j+1]])}}return {v,faces}}
 function parseSTL(buffer){let dv=new DataView(buffer),v=[],faces=[],count=dv.byteLength>=84?dv.getUint32(80,true):0;if(84+count*50===buffer.byteLength){for(let i=0;i<count;i++){let off=84+i*50,face=[];for(let j=0;j<3;j++){let q=off+12+j*12;face.push(v.length);v.push([dv.getFloat32(q,true),dv.getFloat32(q+4,true),dv.getFloat32(q+8,true)])}faces.push(face)}}else{let s=new TextDecoder().decode(buffer),matches=[...s.matchAll(/vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/g)];for(let i=0;i+2<matches.length;i+=3){let face=[];for(let j=0;j<3;j++){face.push(v.length);v.push(matches[i+j].slice(1,4).map(Number))}faces.push(face)}}return {v,faces}}
-$('shape').onchange=()=>{fields();pattern()};$('generate').onclick=pattern;$('nest').onclick=nest;$('dxf').onclick=()=>dxf(false);$('exportNest').onclick=()=>dxf(true);$('svg').onclick=svg;$('tab2d').onclick=()=>show('2d');$('tab3d').onclick=()=>show('3d');$('tabNest').onclick=()=>show('nest');$('reset').onclick=()=>{rotX=.4;rotY=.5;zoom=1;draw()};$('importBtn').onclick=()=>$('file').click();$('file').onchange=async e=>{try{let f=e.target.files[0];if(!f)return;let data=await f.arrayBuffer();mesh=f.name.toLowerCase().endsWith('.obj')?parseOBJ(new TextDecoder().decode(data)):parseSTL(data);if(!mesh.v.length||!mesh.faces.length||mesh.v.length>350000)throw Error('Unsupported or too large mesh');$('status').textContent=`Imported ${f.name}: ${mesh.v.length} vertices, ${mesh.faces.length} triangles. Experimental mesh tools available.`;show('3d')}catch(e){$('status').textContent='Import failed: '+e.message}};
+$('shape').onchange=()=>{fields();pattern()};$('generate').onclick=pattern;$('nest').onclick=nest;$('dxf').onclick=()=>dxf(false);$('exportNest').onclick=()=>dxf(true);$('svg').onclick=svg;$('tab2d').onclick=()=>show('2d');$('tab3d').onclick=()=>show('3d');$('tabNest').onclick=()=>show('nest');$('reset').onclick=()=>{rotX=.4;rotY=.5;zoom=1;draw()};$('importBtn').onclick=()=>{ $('status').textContent='Choose an STL or OBJ file…'; $('file').click(); };
+$('file').addEventListener('change',async e=>{
+ const input=e.currentTarget;
+ try {
+  const f=input.files&&input.files[0];
+  if(!f){$('status').textContent='No file selected.';return;}
+  $('status').textContent='Reading '+f.name+' ('+Math.round(f.size/1024)+' KB)…';
+  if(f.size>25*1024*1024)throw Error('File larger than 25 MB phone limit');
+  const extension=f.name.split('.').pop().toLowerCase();
+  if(extension!=='stl'&&extension!=='obj')throw Error('Choose an .stl or .obj file');
+  const data=await f.arrayBuffer();
+  const parsed=extension==='obj'?parseOBJ(new TextDecoder().decode(data)):parseSTL(data);
+  if(!parsed.v.length||!parsed.faces.length)throw Error('No mesh triangles detected');
+  if(parsed.v.length>350000)throw Error('Mesh too large for this viewer');
+  if(!parsed.v.every(p=>p.length===3&&p.every(Number.isFinite)))throw Error('Invalid mesh coordinates');
+  mesh=parsed; nested=[];
+  if(typeof meshDev!=='undefined')meshDev=null;
+  if(typeof seams!=='undefined')seams.clear();
+  $('results').textContent='Imported '+f.name+'; '+mesh.faces.length+' triangles. Open 3D Model to inspect.';
+  $('status').textContent='Imported '+f.name+': '+mesh.v.length+' vertices, '+mesh.faces.length+' triangles.';
+  show('3d');
+ } catch(err){$('status').textContent='Import failed: '+(err&&err.message||String(err));}
+ finally {input.value='';}
+});
 let drag=null;let c=$('viewer');c.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY];c.setPointerCapture(e.pointerId)});c.addEventListener('pointermove',e=>{if(!drag||($('seamMode')&&$('seamMode').checked))return;rotY+=(e.clientX-drag[0])*.008;rotX+=(e.clientY-drag[1])*.008;drag=[e.clientX,e.clientY];draw3d()});c.addEventListener('pointerup',()=>drag=null);c.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.2,Math.min(6,zoom*(e.deltaY>0?.9:1.1)));draw3d()},{passive:false});window.addEventListener('resize',draw);fields();pattern();if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});

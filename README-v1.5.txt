@@ -1,0 +1,1 @@
+MetalForm CAD Web v1.5 — Studio UI redesign. Upload all root files to GitHub Pages, including NEW studio.css and studio.js. Original geometry engine remains unchanged. Inspector tabs Part / Mesh / Nest / Fabricate / Project; fixed workspace; touch-friendly bottom navigation. No production CNC accuracy guarantee. Test on Chrome Android.
