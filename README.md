@@ -1,27 +1,22 @@
-# MetalForm CAD Web v1.1
+# MetalForm CAD Web v1.4
 
-Static phone-friendly web app. Upload `index.html`, `app.js`, `mesh-tools.js`, `sw.js`, and `manifest.webmanifest` to the **root** of your GitHub Pages repository.
+Upload all root-level files (including v14-tools.js) to your GitHub Pages repository. Test STL models are in test-models/.
 
-## Added in v1.1
-- Experimental OBJ/STL triangle-mesh unfolding into nonoverlapping islands using a greedy breadth-first edge-adjacency development.
-- Seam editing: check **Tap 3D edges to mark seams**, open 3D view, tap edges; orange indicates manually marked cut seams.
-- Experimental mesh DXF with per-island exposed boundary segments on `CUT` layer.
-- Mesh scale input (imported units to mm).
+## Implemented in this iteration
+- Mesh audit: boundary edges, non-manifold edges, zero-area triangles and basic index validation after welding. This is a topology audit, NOT a developability proof.
+- Improved polygon nesting angle options (15/30/45/90 degrees) and optional grain direction lock (0/180 degrees); added kerf as part-to-part spacing allowance, NOT a cutter offset. Existing grid search still heuristic and potentially slow.
+- Calibration multiplier applied to parametric outlines and bend markings. This is NOT a material-specific bend database or rigorous thickness-aware mesh unfolding.
+- Pinch zoom and expanded seam workflow retained from v1.3; visibility-aware edge selection remains outstanding.
+- Full project JSON with imported mesh and seams; local browser autosave (size-capped) and restore. Manual saves preserve meshes up to validation limits.
+- Service worker updated to v1.4 cache.
 
-## Limitations
-- Not a full Pepakura implementation. The mesh unfolding can create many disconnected islands; it does not sew or join seams, account for sheet thickness, or guarantee manufacturability. Triangle overlap checks are approximate.
-- STL vertices are welded by 1e-5 coordinate rounding; open meshes, non-manifold edges, and inconsistent normals may not unfold as intended.
-- Large imported meshes are limited to 1000 triangles for unfolding (3D viewing accepts larger files).
-- Existing automatic nesting remains rectangular-envelope nesting for parametric parts, not true irregular polygon nesting or mixed-parts nesting. Mesh islands are **not** automatically nested.
-- Bend pattern flange lengths are tangent straight lengths, not outside dimensions.
-- Cylinder/cone developments use outside diameters and are not compensated for neutral-axis position.
-- All geometry and exported files require independent dimensional verification before CNC fabrication.
+## Test STL files
+- test-models/test-rectangular-box-200x120x80mm.stl: closed prism, 12 triangles, nominal millimeter units. Expected mesh audit: zero boundary and non-manifold edges. It requires seams for a useful net.
+- test-models/test-open-flat-panel-200x120mm.stl: open planar surface, two triangles. Expected audit: four boundary edges. It can be flattened exactly in principle.
 
-## Deployment
-1. Extract ZIP on Android.
-2. Upload all five root files to GitHub repo (not the enclosing folder).
-3. Wait for GitHub Pages to deploy; refresh twice or close/reopen site if service worker serves old cache.
-4. Chrome → Add to Home screen (if available).
-
-## Testing
-JavaScript source passes Node syntax checks. No Android browser or real-machine CNC test was performed.
+## Important limitations
+- Arbitrary STL models have no sheet thickness or bend feature metadata. Thickness-aware imported mesh unfolding and material-specific bend deduction remain unimplemented.
+- Triangle unfolding and nesting are experimental. No guaranteed clean watertight contours, zero overlap, no distortion, or production-grade cut files.
+- Kerf does not offset the cutting path; it only increases requested spacing between nested parts.
+- Autosave is browser-local and may be cleared by the phone. Save JSON to keep a backup.
+- Syntax and sample-file structural tests only; no end-to-end Android Chrome verification. Check all DXF measurements in CAM and cut test coupons before fabricating.
